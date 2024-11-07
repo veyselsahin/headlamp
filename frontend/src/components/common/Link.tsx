@@ -1,8 +1,11 @@
 import MuiLink from '@mui/material/Link';
 import React from 'react';
+import { useDispatch } from 'react-redux';
 import { Link as RouterLink } from 'react-router-dom';
 import { KubeObject } from '../../lib/k8s/KubeObject';
 import { createRouteURL, RouteURLProps } from '../../lib/router';
+import { setSelectedResource } from '../../redux/drawerModeSlice';
+import { useTypedSelector } from '../../redux/reducers/reducers';
 import { LightTooltip } from './Tooltip';
 
 export interface LinkBaseProps {
@@ -21,6 +24,7 @@ export interface LinkProps extends LinkBaseProps {
   state?: {
     [prop: string]: any;
   };
+  drawerEnabled?: boolean;
 }
 
 export interface LinkObjectProps extends LinkBaseProps {
@@ -29,16 +33,40 @@ export interface LinkObjectProps extends LinkBaseProps {
 }
 
 function PureLink(props: React.PropsWithChildren<LinkProps | LinkObjectProps>) {
-  if ((props as LinkObjectProps).kubeObject) {
-    const { kubeObject, ...otherProps } = props as LinkObjectProps;
+  const {
+    kubeObject,
+    routeName,
+    params = {},
+    search,
+    state,
+    ...otherProps
+  } = props as LinkObjectProps;
+
+  const drawerEnabled = useTypedSelector(state => state.drawerMode.isDetailDrawerEnabled);
+  const dispatch = useDispatch();
+
+  if ('kubeObject' in props) {
     return (
-      <MuiLink component={RouterLink} to={kubeObject!.getDetailsLink()} {...otherProps}>
-        {props.children || kubeObject!.getName()}
-      </MuiLink>
+      <>
+        {drawerEnabled === true && props.kubeObject ? (
+          <MuiLink
+            onClick={() => {
+              if (drawerEnabled) {
+                dispatch(setSelectedResource(kubeObject!));
+              }
+            }}
+          >
+            {props.children || kubeObject.getName()}
+          </MuiLink>
+        ) : (
+          <MuiLink component={RouterLink} to={kubeObject.getDetailsLink()} {...otherProps}>
+            {props.children || kubeObject.getName()}
+          </MuiLink>
+        )}
+      </>
     );
   }
 
-  const { routeName, params = {}, search, state, ...otherProps } = props as LinkProps;
   return (
     <MuiLink
       component={RouterLink}
