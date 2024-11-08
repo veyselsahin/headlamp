@@ -78,19 +78,26 @@ type portForward struct {
 }
 
 func getFreePort() (int, error) {
-	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
-	if err != nil {
-		return 0, err
+	for {
+		addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
+		if err != nil {
+			return 0, err
+		}
+
+		l, err := net.ListenTCP("tcp", addr)
+		if err != nil {
+			return 0, err
+		}
+
+		port := l.Addr().(*net.TCPAddr).Port
+		l.Close()
+
+		// avoid unauthorized or CAP_NET_BIND_SERVICE privilege requirement in linux
+		if port > 1024 {
+			return port, nil
+		}
+		// Retry if port < 1024
 	}
-
-	l, err := net.ListenTCP("tcp", addr)
-	if err != nil {
-		return 0, err
-	}
-
-	defer l.Close()
-
-	return l.Addr().(*net.TCPAddr).Port, nil
 }
 
 // StartPortForward handles the port forward request.
