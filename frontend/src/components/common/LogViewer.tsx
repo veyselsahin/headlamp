@@ -77,6 +77,7 @@ export function LogViewer(props: LogViewerProps) {
       scrollback: 10000,
       rows: 30, // initial rows before fit
       lineHeight: 1.21,
+      allowProposedApi: true,
     });
 
     if (!!outXtermRef) {
@@ -228,10 +229,7 @@ function enableCopyPasteInXterm(xterm: XTerminal) {
         return false;
       }
     }
-    if (arg.ctrlKey && arg.code === 'KeyV' && arg.type === 'keydown') {
-      return false;
-    }
-    return true;
+    return !(arg.ctrlKey && arg.code === 'KeyV' && arg.type === 'keydown');
   });
 }
 
